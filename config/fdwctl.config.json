@@ -1,0 +1,52 @@
+{
+  "postgres": {
+    "host": "192.168.115.204",
+    "port": 65432,
+    "database": "postgres",
+    "user": "postgres",
+    "password": "rS4q6ukG5vY2EJ"
+  },
+
+  "defaults": {
+    "fdw_type": "oracle",
+    "user_password": "CHANGE_ME",
+    "grant_superuser_temporarily": true,
+    "schema_name_pattern": "TESTE_{db_type}_{database}_{user}_{ip}_{client}",
+    "server_name_pattern": "TESTE_{user}_oracle_server_{database}_{client}_{ip}"
+  },
+
+  "roles": [
+    {
+      "name": "STR_DBMON",
+      "enabled": true,
+      "oracle_password": "yJb5vVTBhU2n"
+    },
+    {
+      "name": "STR_DBDASH",
+      "enabled": true,
+      "oracle_password": "yJb5vVTBhU2n"
+    },
+    {
+      "name": "STR_DBPREV",
+      "enabled": true,
+      "oracle_password": "yJb5vVTBhU2n"
+    }
+  ],
+
+   "targets": [
+    {
+      "id": "teste",
+      "client": "TESTE",
+      "fdw_type": "oracle",
+      "connection": {
+        "jdbc": "jdbc:oracle:thin:@tcp://10.97.0.160:1521/DBPRDERP"
+      },
+      "databases": [
+        {
+          "name": "DBPRDERP2",
+          "schemas": ["STR_DBMON", "STR_DBDASH", "STR_DBPREV"]
+        }
+      ]
+    }
+  ]
+}

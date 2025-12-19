@@ -88,50 +88,57 @@ class OracleFDW:
 
     def _create_server(self, server):
         print(f"🔧 Creating FDW server {server}")
-        self.pg.execute("""
-            SELECT 1 FROM pg_foreign_server WHERE srvname = %s;
-        """, (server,))
+
+        self.pg.execute(
+            "SELECT 1 FROM pg_foreign_server WHERE srvname = %s;",
+            (server.lower(),)
+        )
+
         if self.pg.fetchone():
-            print("🔹 Server already exists")
+            print(f"🔹 FDW server {server} already exists, skipping creation")
             return
 
         dbserver = f"//{self.ip}:{self.port}/{self.service}"
+
         self.pg.execute(f"""
             CREATE SERVER {server}
             FOREIGN DATA WRAPPER oracle_fdw
             OPTIONS (dbserver '{dbserver}');
         """)
 
+
     def _drop_server(self, server):
         print(f"🧹 Dropping FDW server {server}")
         self.pg.execute(f'DROP SERVER IF EXISTS "{server}" CASCADE;')
 
     def _create_user_mappings(self, server, role):
- 
-
         password = self._oracle_password(role)
 
+        for pg_user in ("postgres", role.lower()):
+            print(f"🔐 Ensuring user mapping for {pg_user}")
 
-        for user in ("postgres", role.lower()):
-            print(f"🔐 Creating user mapping for {user}")
+            self.pg.execute(
+                """
+                SELECT 1
+                FROM pg_user_mappings um
+                JOIN pg_foreign_server fs ON fs.oid = um.srvid
+                JOIN pg_roles r ON r.oid = um.umuser
+                WHERE fs.srvname = %s
+                AND r.rolname = %s
+                """,
+                (server.lower(), pg_user)
+            )
+
+            if self.pg.fetchone():
+                print(f"🔹 User mapping for {pg_user} already exists, skipping")
+                continue
+
             self.pg.execute(f"""
-                DO $$
-                BEGIN
-                    IF EXISTS (
-                        SELECT 1
-                        FROM pg_user_mappings um
-                        JOIN pg_foreign_server fs ON fs.oid = um.srvid
-                        WHERE fs.srvname = '{server}'
-                        AND um.umuser = (SELECT oid FROM pg_roles WHERE rolname = '{user}')
-                    ) THEN
-                        DROP USER MAPPING FOR {user} SERVER {server};
-                    END IF;
-                END $$;
-
-                CREATE USER MAPPING FOR {user}
+                CREATE USER MAPPING FOR {pg_user}
                 SERVER {server}
                 OPTIONS (user '{role}', password '{password}');
             """)
+
 
     def _import_schema(self, server, schema, role):
         print(f"📥 Importing Oracle schema {role} into {schema}")
