@@ -1,0 +1,49 @@
+{
+  "postgres": {
+    "host": "127.0.0.1",
+    "port": 5432,
+    "database": "postgres",
+    "user": "postgres",
+    "password": "CHANGE_ME"
+  },
+
+  "defaults": {
+    "fdw_type": "oracle",
+    "user_password": "CHANGE_ME",
+    "grant_superuser_temporarily": true,
+    "schema_name_pattern": "{db_type}_{database}_{user}_{ip}_{client}",
+    "server_name_pattern": "{user}_oracle_server_{database}_{client}_{ip}"
+  },
+
+  "roles": [
+    {
+      "name": "User01",
+      "enabled": true
+    },
+    {
+      "name": "User02",
+      "enabled": false 
+    }
+  ],
+
+  "targets": [
+    {
+      "id": "acme-oracle-prod",
+      "client": "ACME",
+      "fdw_type": "oracle",
+
+      "connection": {
+        "jdbc": "jdbc:oracle:thin:@tcp://10.10.10.5:1521/ORCLPDB1"
+      },
+
+      "databases": [
+        {
+          "name": "ORCL",
+          "schemas": [
+            "SCHEMA_NAME"
+          ]
+        }
+      ]
+    }
+  ]
+}
